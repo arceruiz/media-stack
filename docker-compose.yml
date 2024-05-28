@@ -111,6 +111,11 @@ services:
     volumes:
       - ${BASE_PATH}/qbittorent/config:/config
       - ${UNRAID_SHARE}:/share
+    ports:
+      - 8080:8080
+      - 6882:6882
+      - 6881:6881
+      - 6881:6881/udp
     restart: unless-stopped
     
   ##De-unhealth - used to restart qbitorrent if gluetun VPN tunnel ever drops
