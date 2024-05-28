@@ -223,10 +223,25 @@ services:
       image: organizr/organizr:latest
       restart: unless-stopped
       ports:
-        - 80:80
+        - 8001:80
       volumes:
         - ${BASE_PATH}/organizr/config:/config
       environment:
         - PUID=${USER_ID}
         - PGID=${USER_ID}
         - TZ=${TZ}
+
+
+  whisparr:
+    container_name: whisparr
+    image: ghcr.io/hotio/whisparr
+    ports:
+      - "6969:6969"
+    environment:
+      - PUID=${USER_ID}
+      - PGID=${USER_ID}
+      - UMASK=002
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/whisparr/config:/config
+      - ${UNRAID_SHARE}:/data

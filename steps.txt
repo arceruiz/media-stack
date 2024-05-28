@@ -1,0 +1,17 @@
+instalar aplicar docker compose file
+acessar e configurar qbittorrent
+    extrair senha temporaria dos logs do container
+    acessar web ui e trocar a senha
+    configurar pasta de download e preferencias
+acessar e configurar radar/sonar/readar...
+    adicionar root folder
+    configurar preferencias
+    adicionar download client
+acessar e configurar prawlar
+    adicionar indexers
+    adicionar apps (radar/sonar...)
+acessar e configurar jellyseerr
+    adicionar medias, criar users, adicionar plugins
+acessar e configurar bazarr
+acessar organizr
+    vincular apps
