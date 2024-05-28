@@ -1,9 +1,6 @@
 #!/bin/bash
 
 
-source /usr/local/src/balthazarr/envinstall_log.sh
-
-
 install_docker() {
     warn "Checking docker installation..."
     if ! [ -x "$(command -v docker)" ]; then

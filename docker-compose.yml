@@ -97,7 +97,6 @@ services:
   #You can also use RuTorrent, Transmisson or Deluge
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
-    network_mode: "service:gluetun"
     container_name: qbittorrent
     labels:
       - deunhealth.restart.on.unhealthy=true
