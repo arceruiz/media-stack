@@ -1,0 +1,231 @@
+
+version: "2.1"
+
+services:
+  #Radarr - used to find movies automatically
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    environment:
+      - PUID=${USER_ID}
+      - PGID=${USER_ID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/radarr/config:/config
+      - ${UNRAID_SHARE}:/share #Access to the entire share
+    ports:
+      - 7878:7878
+    restart: unless-stopped
+    
+  #Sonarr - used to find tv shows automatically
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=${USER_ID}
+      - PGID=${USER_ID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/sonarr/config:/config
+      - ${UNRAID_SHARE}:/share #Access to the entire share
+    ports:
+      - 8989:8989
+    restart: unless-stopped
+  
+  #Readarr - Used to download books
+  readarr:
+    image: lscr.io/linuxserver/readarr:develop
+    container_name: readarr
+    environment:
+      - PUID=${USER_ID}
+      - PGID=${USER_ID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/readarr/config:/config
+      - ${UNRAID_SHARE}:/share 
+    ports:
+      - 8787:8787
+    restart: unless-stopped
+    
+  #Prowlarr - manages your Sonarr, Radarr and download client
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=${USER_ID}
+      - PGID=${USER_ID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/prowlarr/config:/config
+    ports:
+      - 9696:9696
+    restart: unless-stopped
+    
+  ##Autobrr - used to grab torrents using the trackers IRC channel - Increases seeding due to grabbing content before RSS feed
+  #autobrr:
+  #  container_name: autobrr
+  #  image: ghcr.io/autobrr/autobrr:latest
+  #  restart: unless-stopped
+  #  environment:
+  #    - TZ=${TZ}
+  #    - PUID=${USER_ID}
+  #    - PGID=${USER_ID}
+  #  volumes:
+  #    - ${BASE_PATH}/autobrr/config:/config
+  #  ports:
+  #    - 7474:7474
+
+  jellyseerr:
+    image: fallenbagel/jellyseerr:develop
+    container_name: jellyseerr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - LOG_LEVEL=debug
+      - TZ=Europe/Rome
+    ports:
+      - 5055:5055
+    volumes:
+      - ${BASE_PATH}/jellyseerr/config:/app/config
+    restart: unless-stopped
+    depends_on:
+      - radarr
+      - sonarr
+    
+  #Qbittorent - torrenting software
+  #
+  #You can also use RuTorrent, Transmisson or Deluge
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    network_mode: "service:gluetun"
+    container_name: qbittorrent
+    labels:
+      - deunhealth.restart.on.unhealthy=true
+    environment:
+      - PUID=${USER_ID}
+      - PGID=${USER_ID}
+      - TZ=${TZ}
+      - WEBUI_PORT=8080
+      - TORRENTING_PORT=8694
+    healthcheck: # https://github.com/qdm12/gluetun/issues/641#issuecomment-933856220
+      test: "curl -sf https://1.1.1.1/  || exit 1"
+      interval: 1m
+      timeout: 10s
+      retries: 1
+    volumes:
+      - ${BASE_PATH}/qbittorent/config:/config
+      - ${UNRAID_SHARE}:/share
+    restart: unless-stopped
+    
+  ##De-unhealth - used to restart qbitorrent if gluetun VPN tunnel ever drops
+  #deunhealth:
+  #  build: .
+  #  image: qmcgaw/deunhealth
+  #  container_name: deunhealth
+  #  environment:
+  #    - LOG_LEVEL=info
+  #    - HEALTH_SERVER_ADDRESS=127.0.0.1:9999
+  #    - TZ=${TZ}
+  #  restart: always
+  #  volumes:
+  #    - /var/run/docker.sock:/var/run/docker.sock
+      
+  ##Tdarr - to transcode videos from one format to another like x265 or H.265
+  ##
+  ##This container requires a decent amount of horse power to run but will save space in the long run
+  #tdarr:
+  #  container_name: tdarr
+  #  image: ghcr.io/haveagitgat/tdarr:latest
+  #  restart: unless-stopped
+  #  ports:
+  #    - 8265:8265 # webUI port
+  #    - 8266:8266 # server port
+  #  environment:
+  #    - TZ=${TZ}
+  #    - PUID=${USER_ID}
+  #    - PGID=${USER_ID}
+  #    - UMASK_SET=002
+  #    - nodeName=ServerNode
+  #    - serverIP=0.0.0.0
+  #    - serverPort=8266
+  #    - webUIPort=8265
+  #    - internalNode=true
+  #    - inContainer=true
+  #    - ffmpegVersion=6
+  #  volumes:
+  #    - ${BASE_PATH}/tdarr/server:/app/server
+  #    - ${BASE_PATH}/tdarr/configs:/app/configs
+  #    - ${BASE_PATH}/tdarr/logs:/app/logs
+  #    - ${UNRAID_SHARE}:/media
+  #    - /transcode_cache:/temp
+  #  devices:
+  #   - /dev/dri:/dev/dri #Required for HW transcoding / QuickSync
+     
+  #Bazarr - for subtitles. Try to use SRT format if you can rather than PGS due to performance issues
+  bazarr:
+    container_name: bazarr
+    image: lscr.io/linuxserver/bazarr:latest
+    restart: unless-stopped
+    environment:
+      - PUID=${USER_ID}
+      - PGID=${USER_ID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/bazarr/config:/config
+      - ${UNRAID_SHARE}:/share
+    ports:
+      - 6767:6767
+      
+  #Dozzle - Used to easily view logs of any container in real time!    
+  dozzle:
+    container_name: dozzle
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 9999:8080
+    
+  ##Unpacker - Used to unzip zipped files
+  #unpackerr:
+  #  image: golift/unpackerr
+  #  container_name: unpackerr
+  #  volumes:
+  #    # You need at least this one volume mapped so Unpackerr can find your files to extract.
+  #    # Make sure this matches your Starr apps; the folder mount (/downloads or /data) should be identical.
+  #    - ${UNRAID_SHARE}:/share
+  #    #- ${BASE_PATH}/unpackerr/config:/config
+  #  restart: always
+  #  user: ${USER_ID}:${USER_ID} #Needs to run as 1000
+  #  # What you see below are defaults for this compose. You only need to modify things specific to your environment.
+  #  # Remove apps and feature configs you do not use or need. 
+  #  # ie. Remove all lines that begin with UN_CMDHOOK, UN_WEBHOOK, UN_FOLDER, UN_WEBSERVER, and other apps you do not use.
+  #  environment:
+  #    - UN_START_DELAY=1m
+  #    #- UMASK=002
+  #    - TZ=${TZ}
+  #    #- UN_DEBUG=true
+  #    # Sonarr Config
+  #    - UN_SONARR_0_URL=http://${SERVER_IP}:7878
+  #    - UN_SONARR_0_API_KEY=${SONARR_KEY}
+  #    #- UN_SONARR_0_PATHS_0=/share/downloads/tv
+  #    - UN_SONARR_0_TIMEOUT=10s
+  #    #- UN_SONARR_0_PATHS_0=/share/downloads/tv
+  #    # Radarr Config
+  #    - UN_RADARR_0_URL=http://${SERVER_IP}:8989
+  #    - UN_RADARR_0_API_KEY=${RADARR_KEY}
+  #    #- UN_RADARR_0_PATHS_0=/share/downloads/movies
+  #    - UN_RADARR_0_TIMEOUT=10s
+  #    #- UN_RADARR_0_PATHS_0=/share/downloads/movies
+
+  organizr:
+      container_name: organizr
+      image: organizr/organizr:latest
+      restart: unless-stopped
+      ports:
+        - 80:80
+      volumes:
+        - ${BASE_PATH}/organizr/config:/config
+      environment:
+        - PUID=${USER_ID}
+        - PGID=${USER_ID}
+        - TZ=${TZ}
